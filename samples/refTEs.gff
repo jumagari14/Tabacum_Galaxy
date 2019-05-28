@@ -1,0 +1,17 @@
+chr1	reswag5S_REPET_TEs	match	30568923	30571236	0.0	-	.	ID=ms131073_chr1_DTX-incomp_reswag-B-P117.631-Map7;Target=DTX-incomp_reswag-B-P117.631-Map7 3 2373;TargetLength=2379;TargetDescription=CI:50 coding:(TE_BLRtx: HARB-2B_Mad:ClassII:TIR:PIF-Harbinger: 5.30% | HARB-2_Mad:ClassII:TIR:PIF-Harbinger: 11.95%) struct:(TElength: >1000bps TermRepeats: termTIR: 18) other:(Other_profiles: PF14303.1_NAM-associated_NA_OTHER_27.0: 100.00%(100.00%) SSRCoverage:0.29);Identity=96.2
+chr1	reswag5S_REPET_SSRs	match	21581885	21581903	0.0	+	.	ID=ms733241_chr1_AATAGTTTT2;Target=AATAGTTTT2 1 19
+chr1	reswag5S_REPET_SSRs	match	40476256	40476274	0.0	+	.	ID=ms572627_chr1_AATAGTTTT2;Target=AATAGTTTT2 1 19
+chr1	reswag5S_REPET_SSRs	match	40438364	40438382	0.0	+	.	ID=ms575030_chr1_AATAGTTTT2;Target=AATAGTTTT2 1 19
+chr1	reswag5S_REPET_SSRs	match	8618302	8618320	0.0	+	.	ID=ms825030_chr1_AATAGTTTT2;Target=AATAGTTTT2 1 19
+chr1	reswag5S_REPET_SSRs	match	233671	233689	0.0	+	.	ID=ms890203_chr1_AATAGTTTT2;Target=AATAGTTTT2 1 19
+chr2	reswag5S_REPET_TEs	match	309948	312309	0.0	-	.	ID=ms109068_chr2_DTX-incomp_reswag-B-P117.631-Map7;Target=DTX-incomp_reswag-B-P117.631-Map7 3 2373;TargetLength=2379;TargetDescription=CI:50 coding:(TE_BLRtx: HARB-2B_Mad:ClassII:TIR:PIF-Harbinger: 5.30% | HARB-2_Mad:ClassII:TIR:PIF-Harbinger: 11.95%) struct:(TElength: >1000bps TermRepeats: termTIR: 18) other:(Other_profiles: PF14303.1_NAM-associated_NA_OTHER_27.0: 100.00%(100.00%) SSRCoverage:0.29);Identity=99.3
+chr2	reswag5S_REPET_SSRs	match	3186021	3186039	0.0	+	.	ID=ms526764_chr2_AATAGTTTT2;Target=AATAGTTTT2 1 19
+chr2	reswag5S_REPET_SSRs	match	6703128	6703146	0.0	+	.	ID=ms504172_chr2_AATAGTTTT2;Target=AATAGTTTT2 1 19
+chr4	reswag5S_REPET_SSRs	match	16003699	16003717	0.0	+	.	ID=ms76753_chr4_AATAGTTTT2;Target=AATAGTTTT2 1 19
+chr4	reswag5S_REPET_SSRs	match	12915875	12915893	0.0	+	.	ID=ms101170_chr4_AATAGTTTT2;Target=AATAGTTTT2 1 19
+chr4	reswag5S_REPET_SSRs	match	5438149	5438167	0.0	+	.	ID=ms156207_chr4_AATAGTTTT2;Target=AATAGTTTT2 1 19
+chr5	reswag5S_REPET_SSRs	match	3673292	3673310	0.0	+	.	ID=ms28226_chr5_AATAGTTTT2;Target=AATAGTTTT2 1 19
+chr6	reswag5S_REPET_SSRs	match	22265478	22265496	0.0	+	.	ID=ms1131298_chr6_AATAGTTTT2;Target=AATAGTTTT2 1 19
+chr6	reswag5S_REPET_SSRs	match	7455295	7455313	0.0	+	.	ID=ms1260953_chr6_AATAGTTTT2;Target=AATAGTTTT2 1 19
+chr7	reswag5S_REPET_SSRs	match	5690716	5690734	0.0	+	.	ID=ms1048826_chr7_AATAGTTTT2;Target=AATAGTTTT2 1 19
+chr7	reswag5S_REPET_SSRs	match	6286160	6286178	0.0	+	.	ID=ms1040775_chr7_AATAGTTTT2;Target=AATAGTTTT2 1 19
