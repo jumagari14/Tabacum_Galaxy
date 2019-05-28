@@ -18,7 +18,7 @@ new_f=open(filename,'w')
 for x in f:
     line=x.strip('\n')
     line=line.split('\t')
-    if (line[2]=='match') : 
+    if (line[2]==args.match) : 
         last=line[len(line)-1].split(';')
         search="Target="
         res=[i for i in last if search in i]
@@ -28,5 +28,5 @@ for x in f:
         new_f.write(new_res+"\n")
 
 f.close()
-new_f.close
+new_f.close()
 
