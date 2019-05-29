@@ -27,7 +27,7 @@ new_f=open(filename,'w')
 
 for x in f:
     line=x.strip('\n')
-    line=line.split('\t') # In one line, a list containing data from one column in each position is generated
+    line=line.split('\t') # In one row, a list containing data from one column in each position is generated
     for i in range(0,len(args.target)) :         
         if (line[2]==args.match and ("Target=" + args.target[i] in line[len(line)-1])) : # In order to write on the new file, the substring 'Target=input target from terminal ' is searched in the last element of the list, which corresponds to the last column
                 new_f.write(x)
