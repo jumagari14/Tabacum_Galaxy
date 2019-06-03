@@ -44,9 +44,25 @@ if [ ! -d "genome_ind" ]
     --sjdbGTFfile /gpfs/home/juagarcia/Galaxy64-[gffread_on_data_51__gtf].gtf \
     --genomeChrBinNbits 12 
 fi   
-#./STAR --runThreadN 16 --runMode alignReads --outFilterMatchNmin 16 --outSAMtype BAM Unsorted SortedByCoordinate --genomeDir /gpfs/home/juagarcia/genome_ind --outFileNamePrefix sample --readFilesIn $1  $2
+./STAR \
+--runThreadN 16 \
+--runMode alignReads \
+--outFilterMatchNmin 16 \
+--outSAMtype BAM Unsorted SortedByCoordinate \
+--genomeDir /gpfs/home/juagarcia/genome_ind \
+--outFileNamePrefix $3 \
+--readFilesIn $1  $2
 
 
-## In featurecOunts, 
-./featureCounts -p -C -O -t exon -g gene_id -F SAF -Q 32 -T 16 -a /gpfs/home/jumagari/Galaxy51-[Nitab-v4.5_gene_models_Scf_Edwards2017.gff].gff3  -o sample_count sampleAligned.out.sam
+## In featureCounts, paired-end reads must have -p option!!! 
+./featureCounts \
+-p \
+-t exon \
+-g gene_id \
+-F GTF \
+-Q 32 \
+-T 16 \
+-a /gpfs/home/juagarcia/Galaxy10-[gffread_on_data_6__gtf].gtf \
+-o $3 \
+$3Aligned.out.bam \
 # | cut -f1,7- | sed 1d > $GENEMX
