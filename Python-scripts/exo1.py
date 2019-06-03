@@ -10,10 +10,12 @@ reader.close() """
 
 import argparse
 
+from pathlib import Path
+
 parser=argparse.ArgumentParser(prog="Gff file manipulator", description="This scripts extracts information from a gff file and stores it in a new one.")
 
-parser.add_argument('-i',action='store',dest='input_file',type=str,help='GFF filename that contains the data')
-parser.add_argument('-o',action='store',dest='output_file',type=str,help='Output GFF filename')
+parser.add_argument('-i',action='store',dest='input_file',type=Path,help='GFF filename that contains the data')
+parser.add_argument('-o',action='store',dest='output_file',type=Path,help='Output GFF filename')
 parser.add_argument('-m', action='store',dest='match',type=str,help='Match conditions')
 parser.add_argument('-t', action='store',nargs='+',dest='target',type=str,help='Target conditions, separated by a space. If space separator are included in the conditions, the escape character \ must be used')
 
