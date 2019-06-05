@@ -19,6 +19,8 @@
 # fin des directives PBS
 #############################
 
+# On terminal, paste sbatch -J STAR-Align -t 03:00:00 -N 16 --ntasks=16 --tasks-per-node=30 --chdir=. ./rna-star.sh
+
 # useful informations to print
 echo "#############################" 
 echo "User:" $USER
@@ -33,36 +35,71 @@ echo "#############################"
 #############################
 
 export LD_LIBRARY_PATH=/gpfs/softs/contrib/apps/gcc/7.3.0/lib64/:/gpfs/softs/contrib/apps/gcc/7.3.0/lib
+
+gtf=$(find ./ -name "*.gtf")
+gff=$(find ./ -name "*gff[3]*")
+fasta=$(find ./ -name "*.fasta")
+
 if [ ! -d "genome_ind" ] 
  then  ## Genome indexes are generated if necessary 
+    mkdir -m 755 -p genome_ind 
     ./STAR \
     --runThreadN 16 \
     --runMode genomeGenerate \
     --genomeDir /gpfs/home/juagarcia/genome_ind \
-    --genomeFastaFiles /gpfs/home/juagarcia/Nitab-v4.5_genome_Scf_Edwards2017.fasta \
+    --genomeFastaFiles "$fasta" \
     --sjdbOverhang 142 \
-    --sjdbGTFfile /gpfs/home/juagarcia/Galaxy64-[gffread_on_data_51__gtf].gtf \
+    --sjdbGTFfile "$gtf" \
     --genomeChrBinNbits 12 
-fi   
-./STAR \
---runThreadN 16 \
---runMode alignReads \
---outFilterMatchNmin 16 \
---outSAMtype BAM Unsorted SortedByCoordinate \
---genomeDir /gpfs/home/juagarcia/genome_ind \
---outFileNamePrefix $3 \
---readFilesIn $1  $2
+fi  
+list=$(ls subdata/*.gz | xargs -n 1 basename | sed 's/\(.*\)_.*/\1/' | sort -u)
 
+mkdir -p -m 755 STAR_Align
+mkdir -p -m 755 counts
+for I in $list
+do
+    ./STAR \
+    --runThreadN 16 \
+    --runMode alignReads \
+    --outFilterMatchNmin 16 \
+    --outSAMtype BAM Unsorted SortedByCoordinate \
+    --genomeDir /gpfs/home/juagarcia/genome_ind \
+    --outFileNamePrefix STAR_Align/"$I" \
+    --readFilesIn subdata/"$I"_1.fq.gz  subdata/"$I"_2.fq.gz
 
-## In featureCounts, paired-end reads must have -p option!!! 
-./featureCounts \
--p \
--t exon \
--g gene_id \
--F GTF \
--Q 32 \
--T 16 \
--a /gpfs/home/juagarcia/Galaxy10-[gffread_on_data_6__gtf].gtf \
--o $3 \
-$3Aligned.out.bam \
-# | cut -f1,7- | sed 1d > $GENEMX
+    ## In featureCounts, paired-end reads must have -p option!!! 
+    ./featureCounts \
+    -p \
+    -t exon \
+    -g gene_id \
+    -F GTF \
+    -Q 32 \
+    -T 16 \
+    -a "$gtf" \
+    -o /gpfs/home/juagarcia/counts/"$I" \
+    STAR_Align/"$I"Aligned.out.bam 
+    # | cut -f1,7- | sed 1d > $GENEMX
+done
+
+cd counts ; touch Matrix_data 
+
+count=0
+
+for J in $list 
+do 
+    count=$((count+1))
+    if [$count -eq 1 ]
+    then 
+        sed '1d' $J > tmp ; mv tmp $J 
+        cat $J | cut -d $'\t' -f 1,7  > count_ind
+        paste Matrix_data count_ind > temp2 && mv temp2 Matrix_data.tabular 
+        rm -f temp2
+    else
+        sed '1d' $J > tmp ; mv tmp $J 
+        cat $J | rev | cut -d $'\t' -f 1 | rev > count_ind
+        paste Matrix_data count_ind > temp2 && mv temp2 Matrix_data.tabular 
+        rm -f temp2 
+    fi 
+done 
+
+rm -f count_ind 
