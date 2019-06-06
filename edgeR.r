@@ -1,8 +1,13 @@
-setwd("/media/jumagari/JUANMA/Stage")
-library(edgeR)
-fc_res <- read.table("Count_matrix.tabular", header = TRUE)
-ext_fc<- read.table("Matrix_data", header = T)
-fc_res<- cbind(Geneid=fc_res$Geneid,ext_fc)
+## Author: Juan Manuel Garcia
+
+setwd("/media/jumagari/JUANMA/Stage/")
+## Install libraries and load them
+require(edgeR)
+
+
+## Remove erroneous data from count matrix
+fc_res <- read.table("Matrix_data.tabular", header = TRUE)
+fc_res[!duplicated(as.list(fc_res))]-> fc_res
 
 row.names(fc_res) <- fc_res$Geneid
 
@@ -10,9 +15,9 @@ fc_res<- fc_res[,-c(1)]
 
 Factor_gr<- c(rep("NonStr",3),rep("Str",3))
 
-d<- DGEList(counts = fc_res,group = factor(Factor_gr))
+## Build model matrix
 
-## Build model matrix 
+d<- DGEList(counts = fc_res,group = factor(Factor_gr))
 
 myCPM<- cpm(fc_res)
 
