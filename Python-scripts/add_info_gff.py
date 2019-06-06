@@ -3,6 +3,7 @@
 
 import re 
 import argparse
+import fileinput
 
 from pathlib import Path
 
@@ -12,6 +13,7 @@ parser=argparse.ArgumentParser(prog="Gff file manipulator", description="This sc
 parser.add_argument('-i',action='store',dest='input_file',type=Path,help='GFF filename that contains the data')
 parser.add_argument('-o',action='store',dest='output_file',type=Path,help='Output GFF filename')
 parser.add_argument('-fai',action='store',dest='fai_file',type=Path,help='Fasta.fai filename')
+parser.add_argument('-m', action='store',dest='match',type=str,help='Match conditions')
 
 
 args=parser.parse_args()
@@ -77,26 +79,33 @@ for i in fai_lines :
 	chrom.append(i.split('\t')[0]) # Chromosome name is added
 	chrom_len.append(i.split('\t')[1]) #Chromosome length is added
 #
-
+cont=0
+header='Chromosome Length_Chr Type Match/Match_part Start End Length Score Strand Frame Attribute Code Class TE_Name TE_Status'.split()
 # Data is appended to each line depending on the criteria
 for x in f :
+	cont=cont+1
+	if cont==1 : # Header is added 
+		for i in range(0,len(header)-1) : 
+			new_f.write(header[i]+"\t")
+		new_f.write(header[len(header)-1]+"\n")
 	line=x.strip('\n')
 	line=line.split('\t')
-	TElength=int(line[4])-int(line[3]) # Length of transposable elements is calculated by substraction
-	line.insert(5,TElength) # TElength is added in the 6th column
-	line.insert(1,chrom_len[chrom.index(line[0])]) # Chromosome length is added in the 2nd column 
-	TE_class=re.search('(?<=Target=)[A-Za-z|0-9]*',line[len(line)-1]).group(0) # The substring that comes next to 'Target=' and corresponds to the desired 1st feature is extracted
-	if TE_class in class_keys : # If possible, class name and their info, stored in the dictionary previously defined, is appended. 
-		line.append(TE_class) 
-		line.extend(classes[TE_class])
-	else : # If the class does not belong to the dictionary, a new class 'SSR' and white spaces are appended 
-		line.append('SRR')
-		line.extend(['','',''])
-	for j in range(0,len(line)-1) : # All the new data is written in a new file 
-		new_f.write(str(line[j])+"\t")
-	new_f.write(str(line[len(line)-1])+"\n")	
+	if (line[2]==args.match) :
+		TElength=int(line[4])-int(line[3]) # Length of transposable elements is calculated by substraction
+		line.insert(5,TElength) # TElength is added in the 6th column
+		line.insert(1,chrom_len[chrom.index(line[0])]) # Chromosome length is added in the 2nd column 
+		TE_class=re.search('(?<=Target=)[A-Za-z|0-9]*',line[len(line)-1]).group(0) # The substring that comes next to 'Target=' and corresponds to the desired 1st feature is extracted
+		if TE_class in class_keys : # If possible, class name and their info, stored in the dictionary previously defined, is appended. 
+			line.append(TE_class) 
+			line.extend(classes[TE_class])
+		else : # If the class does not belong to the dictionary, a new class 'SSR' and whitespaces are appended 
+			line.append('SRR')
+			line.extend(['SRR','SRR',TE_class])
+		for j in range(0,len(line)-1) : # All the new data is written in a new file 
+			new_f.write(str(line[j])+"\t")
+		new_f.write(str(line[len(line)-1])+"\n")	
 
-new_f.close()
+
 fai_f.close()
 f.close()
 

@@ -20,7 +20,7 @@ new_f=open(filename,'w')
 for x in f:
     line=x.strip('\n')
     line=line.split('\t')
-    if (line[2]=='match') : 
+    if (line[2]==args.match) : 
         last=line[len(line)-1].split(';') # A new list containing every feature from the last column separated by a semicolon is calculated
         search="Target="
         res=[i for i in last if search in i] # Information about 'Target' is extracted from the previously obtained list
