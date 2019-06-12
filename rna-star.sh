@@ -40,12 +40,13 @@ module load R/3.5.0
 export LD_LIBRARY_PATH=/gpfs/softs/contrib/apps/gcc/7.3.0/lib64/:/gpfs/softs/contrib/apps/gcc/7.3.0/lib:/usr/bin/java:/usr/lib/java:/etc/java:/usr/share/java:/usr/share/man/man1/java.1.gz
 
 
-module load Fiji/java-8
+module load jdk1.8/8u22
 ## java -jar Trimmomatic-0.39/trimmomatic-0.39.jar PE -threads 1 -phred33 /media/jumagari/JUANMA/Stage/Galaxy_An/subdata/TAB0.3_1.fastqsanger /media/jumagari/JUANMA/Stage/Galaxy_An/subdata/TAB0.3_2.fastqsanger forw_par.gq.gz forw_unp.fq.gz rev_pair.fq.gz rev_unp.fq.gz ILLUMINACLIP:./Trimmomatic-0.39/adapters/TruSeq2-PE.fa:2:30:10 LEADING:25 TRAILING:25 SLIDINGWINDOW:5:20 MINLEN:50
 
 list=$(ls subdata/*.gz | xargs -n 1 basename | sed 's/\(.*\)_.*/\1/' | sort -u)
 
-mkdir -p -m 755 trimm_data
+mkdir -p -m 755 trimm_data 
+mkdir -p -m 755 trimm_data/quality
 
 gtf=$(find ./ -name "*.gtf")
 gff=$(find ./ -name "*gff[3]*")
@@ -71,6 +72,8 @@ do
 
     cp subdata/"$I"_1.fq.gz subdata/"$I"_1.fastqsanger 
     cp subdata/"$I"_2.fq.gz subdata/"$I"_2.fastqsanger
+
+    FastQC/fastqc subdata/"$I"_1.fastqsanger subdata/"$I"_2.fastqsanger --outdir=trimm_data/quality
 
     java -jar ./Trimmomatic-0.39/trimmomatic-0.39.jar PE -threads 16 -phred33 ./subdata/"$I"_1.fastqsanger ./subdata/"$I"_2.fastqsanger trimm_data/"$I"_1.par.fastqsanger "$I"_1.unp.fastqsanger trimm_data/"$I"_2.par.fastqsanger "$I"_2.unp.fastqsanger ILLUMINACLIP:Trimmomatic-0.39/adapters/TruSeq2-PE.fa:2:30:10 LEADING:25 TRAILING:25 SLIDINGWINDOW:5:20 MINLEN:50
 
