@@ -36,11 +36,10 @@ echo "#############################"
 
 ## Load necessary modules
 module load R/3.5.0 
-
-export LD_LIBRARY_PATH=/gpfs/softs/contrib/apps/gcc/7.3.0/lib64/:/gpfs/softs/contrib/apps/gcc/7.3.0/lib:/usr/bin/java:/usr/lib/java:/etc/java:/usr/share/java:/usr/share/man/man1/java.1.gz
-
-
 module load jdk1.8/8u22
+
+export LD_LIBRARY_PATH=/gpfs/softs/contrib/apps/gcc/7.3.0/lib64/:/gpfs/softs/contrib/apps/gcc/7.3.0/lib
+
 ## java -jar Trimmomatic-0.39/trimmomatic-0.39.jar PE -threads 1 -phred33 /media/jumagari/JUANMA/Stage/Galaxy_An/subdata/TAB0.3_1.fastqsanger /media/jumagari/JUANMA/Stage/Galaxy_An/subdata/TAB0.3_2.fastqsanger forw_par.gq.gz forw_unp.fq.gz rev_pair.fq.gz rev_unp.fq.gz ILLUMINACLIP:./Trimmomatic-0.39/adapters/TruSeq2-PE.fa:2:30:10 LEADING:25 TRAILING:25 SLIDINGWINDOW:5:20 MINLEN:50
 
 list=$(ls subdata/*.gz | xargs -n 1 basename | sed 's/\(.*\)_.*/\1/' | sort -u)
@@ -65,7 +64,7 @@ if [ ! -d "genome_ind" ]
     --genomeChrBinNbits 12 
 fi  
 
-mkdir -p -m 755 STAR_Align
+mkdir -p -m 755 STAR_Align  
 mkdir -p -m 755 counts
 for I in $list
 do
@@ -124,5 +123,5 @@ done
 
 rm -f count_ind 
 
-## Rscript edgeR.r
-## Rscript deseq2.r 
+## Rscript edgeR.r -m Matrix_data.tabular -a gffread_on_data_6__gtf.gtf -i Stress_level::NonStr,NonStr,NonStr,Str,Str,Str -o ./ -C Str,NonStr
+## Rscript deseq2.r -m Matrix_data.tabular -i NonStr,NonStr,NonStr,Str,Str,Str 
