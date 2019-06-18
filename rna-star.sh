@@ -4,13 +4,13 @@
 # les directives Slurm vont ici:
 
 # Your job name (displayed by the queue)
-#SBATCH -J HelloWorld
+#SBATCH -J RNA-Seq analysis
 
 # walltime (hh:mm::ss)
 #SBATCH -t 00:10:00
 
 # Specify the number of nodes(nodes=) and the number of cores per nodes(tasks-pernode=) to be used
-#SBATCH -N 1
+#SBATCH -N 6
 #SBATCH --tasks-per-node=1
 
 # change working directory
@@ -40,9 +40,9 @@ module load jdk1.8/8u22
 
 export LD_LIBRARY_PATH=/gpfs/softs/contrib/apps/gcc/7.3.0/lib64/:/gpfs/softs/contrib/apps/gcc/7.3.0/lib
 
-## java -jar Trimmomatic-0.39/trimmomatic-0.39.jar PE -threads 1 -phred33 /media/jumagari/JUANMA/Stage/Galaxy_An/subdata/TAB0.3_1.fastqsanger /media/jumagari/JUANMA/Stage/Galaxy_An/subdata/TAB0.3_2.fastqsanger forw_par.gq.gz forw_unp.fq.gz rev_pair.fq.gz rev_unp.fq.gz ILLUMINACLIP:./Trimmomatic-0.39/adapters/TruSeq2-PE.fa:2:30:10 LEADING:25 TRAILING:25 SLIDINGWINDOW:5:20 MINLEN:50
+## java -jar Trimmomatic-0.39/trimmomatic-0.39.jar PE -threads 1 -phred33 /media/jumagari/JUANMA/Stage/Galaxy_An/subdata/TAB0.3_1.fq /media/jumagari/JUANMA/Stage/Galaxy_An/subdata/TAB0.3_2.fq forw_par.gq.gz forw_unp.fq.gz rev_pair.fq.gz rev_unp.fq.gz ILLUMINACLIP:./Trimmomatic-0.39/adapters/TruSeq2-PE.fa:2:30:10 LEADING:25 TRAILING:25 SLIDINGWINDOW:5:20 MINLEN:50
 
-list=$(ls subdata/*.gz | xargs -n 1 basename | sed 's/\(.*\)_.*/\1/' | sort -u)
+list=$(ls subdata/*fq | xargs -n 1 basename | sed 's/\(.*\)_.*/\1/' | sort -u)
 
 mkdir -p -m 755 trimm_data 
 mkdir -p -m 755 trimm_data/quality
@@ -69,14 +69,14 @@ mkdir -p -m 755 counts
 for I in $list
 do
 
-    cp subdata/"$I"_1.fq.gz subdata/"$I"_1.fastqsanger 
-    cp subdata/"$I"_2.fq.gz subdata/"$I"_2.fastqsanger
+    # cp subdata/"$I"_1.fq.gz subdata/"$I"_1.fastqsanger 
+    # cp subdata/"$I"_2.fq.gz subdata/"$I"_2.fastqsanger
 
-    FastQC/fastqc subdata/"$I"_1.fastqsanger subdata/"$I"_2.fastqsanger --outdir=trimm_data/quality
+    FastQC/fastqc subdata/"$I"_1.fq subdata/"$I"_2.fq --outdir=trimm_data/quality
 
-    java -jar ./Trimmomatic-0.39/trimmomatic-0.39.jar PE -threads 16 -phred33 ./subdata/"$I"_1.fastqsanger ./subdata/"$I"_2.fastqsanger trimm_data/"$I"_1.par.fastqsanger "$I"_1.unp.fastqsanger trimm_data/"$I"_2.par.fastqsanger "$I"_2.unp.fastqsanger ILLUMINACLIP:Trimmomatic-0.39/adapters/TruSeq2-PE.fa:2:30:10 LEADING:25 TRAILING:25 SLIDINGWINDOW:5:20 MINLEN:50
+    java -jar ./Trimmomatic-0.39/trimmomatic-0.39.jar PE -threads 16 -phred33 ./subdata/"$I"_1.fq ./subdata/"$I"_2.fq trimm_data/"$I"_1.par.fq "$I"_1.unp.fq trimm_data/"$I"_2.par.fq "$I"_2.unp.fq ILLUMINACLIP:Trimmomatic-0.39/adapters/TruSeq2-PE.fa:2:30:10 LEADING:25 TRAILING:25 SLIDINGWINDOW:5:20 MINLEN:50
 
-    rm -rf "$I"_1.unp.fastqsanger "$I"_2.unp.fastqsanger
+    rm -rf "$I"_1.unp.fq "$I"_2.unp.fq
 
     ./STAR \
     --runThreadN 16 \
@@ -85,7 +85,7 @@ do
     --outSAMtype BAM Unsorted SortedByCoordinate \
     --genomeDir /gpfs/home/juagarcia/genome_ind \
     --outFileNamePrefix STAR_Align/"$I" \
-    --readFilesIn trimm_data/"$I"_1.par.fastqsanger  trimm_data/"$I"_2.par.fastqsanger
+    --readFilesIn trimm_data/"$I"_1.par.fq  trimm_data/"$I"_2.par.fq
 
     ## In featureCounts, paired-end reads must have -p option!!! 
     ./featureCounts \
@@ -110,10 +110,12 @@ do
     count=$((count+1))
     if (($count == 1))
     then 
+        sed '1d' $J > tmp ; mv tmp $J 
         cut -d $'\t' -f 1,7 $J  > count_ind
         paste Matrix_data.tabular count_ind > temp2 && mv temp2 Matrix_data.tabular 
         rm -f temp2
     else
+        sed '1d' $J > tmp ; mv tmp $J 
         cut -d $'\t' -f 7 $J  > count_ind
         paste Matrix_data.tabular count_ind > temp2 && mv temp2 Matrix_data.tabular 
         rm -f temp2 
@@ -123,5 +125,8 @@ done
 
 rm -f count_ind 
 
-## Rscript edgeR.r -m Matrix_data.tabular -a gffread_on_data_6__gtf.gtf -i Stress_level::NonStr,NonStr,NonStr,Str,Str,Str -o ./ -C Str,NonStr
-## Rscript deseq2.r -m Matrix_data.tabular -i NonStr,NonStr,NonStr,Str,Str,Str 
+mv counts/Matrix_data.tabular ~/
+
+## Normalisation
+Rscript edgeR.r -m Matrix_data.tabular -a Galaxy_An/gffread_on_data_6__gtf.gtf -i Stress_level::NonStr,NonStr,NonStr,Str,Str,Str -o ./Galaxy_An -C Str,NonStr -z 1 -y
+Rscript deseq2.r -m Matrix_data.tabular -i NonStr,NonStr,NonStr,Str,Str,Str 
