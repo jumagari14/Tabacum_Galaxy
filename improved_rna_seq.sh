@@ -19,7 +19,7 @@
 # fin des directives PBS
 #############################
 
-# On terminal, paste sbatch -J STAR-Align -t 03:00:00 --ntasks=32 --chdir=. ./improved_rna_seq.bash 
+# On terminal, paste sbatch -J STAR-Align -t 03:00:00 -N 16 --ntasks=16 --tasks-per-node=30 --chdir=. ./improved_rna_star.sh
 
 # useful informations to print
 echo "#############################" 
@@ -41,30 +41,35 @@ module load jdk1.8/8u22
 export LD_LIBRARY_PATH=/gpfs/softs/contrib/apps/gcc/7.3.0/lib64/:/gpfs/softs/contrib/apps/gcc/7.3.0/lib
 
 ## java -jar Trimmomatic-0.39/trimmomatic-0.39.jar PE -threads 1 -phred33 /media/jumagari/JUANMA/Stage/Galaxy_An/subdata/TAB0.3_1.fq.gz /media/jumagari/JUANMA/Stage/Galaxy_An/subdata/TAB0.3_2.fq.gz forw_par.gq.gz forw_unp.fq.gz rev_pair.fq.gz rev_unp.fq.gz ILLUMINACLIP:./Trimmomatic-0.39/adapters/TruSeq2-PE.fa:2:30:10 LEADING:25 TRAILING:25 SLIDINGWINDOW:5:20 MINLEN:50
+cd ~/ 
+list=$(ls ./data/subdata/*.fq.gz | xargs -n 1 basename | sed 's/\(.*\)_.*/\1/' | sort -u)
 
-list=$(ls subdata/*.fq | xargs -n 1 basename | sed 's/\(.*\)_.*/\1/' | sort -u)
+mkdir -p -m 755 ./bin/trimm_data 
+mkdir -p -m 755 ./bin/trimm_data/quality
 
-mkdir -p -m 755 trimm_data 
-mkdir -p -m 755 trimm_data/quality
 
-gtf=$(find ./ -not -path '*/\R*' -name "*.gtf")
-gff=$(find ./ -name "*gff[3]*")
-fasta=$(find ./ -name "*.fasta")
+gff=$(find ./data/ -not -path '*/\R*' -name "*gff[3]*")
+fasta=$(find ./data/ -name "*.fa")
 
-if [ ! -d "genome_ind" ] 
+~/scripts/gffread "$gff" -o "$gff".gtf
+tail -n +4 "$gff".gtf > ~/data/tmp ; mv ~/data/tmp "$gff".gtf
+
+gtf=$(find ./data/ -not -path '*/\R*' -name "*.gtf")
+gtf=$(readlink -f $gtf)
+if [ ! -d "./bin/genome_ind" ] 
  then  ## Genome indexes are generated if necessary 
-    mkdir -m 755 -p genome_ind 
-    ./STAR \
+    mkdir -m 755 -p ./bin/genome_ind 
+    ./scripts/STAR \
     --runThreadN 16 \
     --runMode genomeGenerate \
-    --genomeDir /gpfs/home/juagarcia/genome_ind \
+    --genomeDir ./bin/genome_ind  \
     --genomeFastaFiles "$fasta" \
-    --sjdbOverhang 142 \
+    --sjdbOverhang 149 \
     --sjdbGTFfile "$gtf" \
-    --genomeChrBinNbits 12 
+    --genomeChrBinNbits 12 # reduce RAM consumption
 fi  
 
-## Only to be run one time 
+## Only to be run once 
 # if [$1=="convert"] 
 # then 
 #     parallel -j 3 "mv subdata/{}_1.fq.gz subdata/{}_1.fastqsanger" ::: $list 
@@ -72,57 +77,60 @@ fi
 # fi
 
 # Uncompress gz files 
-# parallel -j 3 "gunzip {}_1.fq.gz" ::: $list
+parallel -j 2 "gunzip {}_1.fq.gz" ::: $list
 
-mkdir -p -m 755 STAR_Align  
-mkdir -p -m 755 counts
+mkdir -p -m 755 ./bin/STAR_Align  
+mkdir -p -m 755 ./bin/counts
 
-#parallel -j 6 "FastQC/fastqc subdata/{}_1.fq subdata/{}_2.fq --outdir=trimm_data/quality" ::: $list
+parallel -j 3 "./scripts/FastQC/fastqc ./data/subdata/{}_1.fq.gz ./data/subdata/{}_2.fq.gz --outdir=./bin/trimm_data/quality" ::: $list
 
-parallel -j 6 "java -jar ./Trimmomatic-0.39/trimmomatic-0.39.jar PE -threads 16 -phred33 ./subdata/{}_1.fq ./subdata/{}_2.fq trimm_data/{}_1.par.fq {}_1.unp.fq trimm_data/{}_2.par.fq {}_2.unp.fq ILLUMINACLIP:Trimmomatic-0.39/adapters/TruSeq2-PE.fa:2:30:10 LEADING:25 TRAILING:25 SLIDINGWINDOW:5:20 MINLEN:50" ::: $list
+parallel -j 3 "java -jar ./scripts/Trimmomatic-0.39/trimmomatic-0.39.jar PE -threads 16 -phred33 ./data/subdata/{}_1.fq.gz ./data/subdata/{}_2.fq.gz ./bin/trimm_data/{}_1.par.fq.gz {}_1.unp.fq.gz ./bin/trimm_data/{}_2.par.fq.gz {}_2.unp.fq.gz ILLUMINACLIP:./scripts/Trimmomatic-0.39/adapters/TruSeq2-PE.fa:2:30:10 LEADING:25 TRAILING:25 SLIDINGWINDOW:5:20 MINLEN:50" ::: $list
 
-parallel -j 6 "rm -rf {}_1.unp.fq {}_2.unp.fq" ::: $list
-# for I in $list
-# do
-# ./STAR \
-#     --runThreadN 16 \
-#     --runMode alignReads \
-#     --outFilterMatchNmin 16 \
-#     --outSAMtype BAM Unsorted SortedByCoordinate \
-#     --genomeDir /gpfs/home/juagarcia/genome_ind \
-#     --outFileNamePrefix STAR_Align/"$I" \
-#     --readFilesIn trimm_data/"$I"_1.par.fq  trimm_data/"$I"_2.par.fq
-# done
-# ## In featureCounts, paired-end reads must have -p option!!! 
-# cd STAR_Align
-# parallel -j 3 "../featureCounts -p -t exon -g gene_id -F GTF -Q 32 -T 16 -a ../"$gtf" -o /gpfs/home/juagarcia/counts/{.}.txt {}" ::: *Aligned.out.bam 
-# # | cut -f1,7- | sed 1d > $GENEMX
+parallel -j 3 "rm -rf {}_1.unp.fq.gz {}_2.unp.fq.gz" ::: $list
 
-# cd ~/counts ; touch Matrix_data.tabular 
+./scripts/STAR --genomeLoad LoadAndExit --genomeDir ./bin/genome_ind # Load genome just once to save RAM memory 
 
-# count=0
+parallel --compress -j 3 "./scripts/STAR --runThreadN 16 --runMode alignReads --genomeLoad LoadAndKeep --readFilesCommand zcat --outFilterMatchNmin 16 --outSAMtype BAM Unsorted SortedByCoordinate --limitBAMsortRAM 10000200000 --genomeDir ./bin/genome_ind  --outFileNamePrefix ./bin/STAR_Align/{} --readFilesIn ./bin/trimm_data/{}_1.par.fq.gz  ./bin/trimm_data/{}_2.par.fq.gz" ::: $list
+# --genomeLoad LoadAndKeep: keep genome in memory  
+# --outFilterMatchNmin: alignment is set if matched bases is higher 
+# --readFilesCommand zcat: work with compressed gz files
+./scripts/STAR --genomeLoad Remove --genomeDir ./bin/genome_ind # Unload genome
+parallel --compress -j 3 "./STAR --runThreadN 16 --runMode alignReads --outFilterMatchNmin 16 --outSAMtype BAM Unsorted SortedByCoordinate --genomeDir /scratch/juagarcia/genome_ind  --outFileNamePrefix STAR_Align/{} --readFilesIn trimm_data/{}_1.par.fq.gz  trimm_data/{}_2.par.fq.gz" ::: $list
 
-# for J in $list 
-# do 
-#     count=$((count+1))
-#     if (($count == 1))
-#     then 
-#         sed '1d' "$J"Aligned.out.txt > tmp ; mv tmp "$J"Aligned.out.txt 
-#         cut -d $'\t' -f 1,7 "$J"Aligned.out.txt  > count_ind
-#         paste Matrix_data.tabular count_ind > temp2 && mv temp2 Matrix_data.tabular 
-#         rm -f temp2
-#     else
-#         sed '1d' "$J"Aligned.out.txt > tmp ; mv tmp "$J"Aligned.out.txt 
-#         cut -d $'\t' -f 7 "$J"Aligned.out.txt  > count_ind
-#         paste Matrix_data.tabular count_ind > temp2 && mv temp2 Matrix_data.tabular 
-#         rm -f temp2 
-#     fi 
-# done 
+# In featureCounts, paired-end reads must have -p option!!! 
+cd ./bin/STAR_Align
+parallel -j 3 "~/scripts/featureCounts -p -t exon -g gene_id -F GTF -Q 32 -T 16 -a "$gtf" -o ../counts/{.}.txt {}" ::: *Aligned.out.bam 
+# -F GTF: reference format, GFF or GTF
+# -t exon: exon region are kept from gtf file
+# -Q 32: quality threshold
+# -T 16: number of threads
 
-# cd ~/; rm -f counts/count_ind 
 
-# mv counts/Matrix_data.tabular ~/
+cd ../counts ; touch Matrix_data.tabular 
 
-# ## Normalisation
+count=0
+
+for J in $list 
+do 
+    count=$((count+1))
+    if (($count == 1))
+    then 
+        sed '1d' "$J"Aligned.out.txt > tmp ; mv tmp "$J"Aligned.out.txt 
+        cut -d $'\t' -f 1,7 "$J"Aligned.out.txt  > count_ind
+        paste Matrix_data.tabular count_ind > temp2 && mv temp2 Matrix_data.tabular 
+        rm -f temp2
+    else
+        sed '1d' "$J"Aligned.out.txt > tmp ; mv tmp "$J"Aligned.out.txt 
+        cut -d $'\t' -f 7 "$J"Aligned.out.txt  > count_ind
+        paste Matrix_data.tabular count_ind > temp2 && mv temp2 Matrix_data.tabular 
+        rm -f temp2 
+    fi 
+done 
+
+cd ../; rm -f counts/count_ind 
+
+mv counts/Matrix_data.tabular ./
+
+# ## Normalisation (to be run on the computer in a local folder)
 # Rscript edgeR.r -m Matrix_data.tabular -a Galaxy_An/gffread_on_data_6__gtf.gtf -i Stress_level::NonStr,NonStr,NonStr,Str,Str,Str -o ./Galaxy_An -C Str,NonStr -z 1 -y
 # Rscript deseq2.r -m Matrix_data.tabular -i NonStr,NonStr,NonStr,Str,Str,Str 
