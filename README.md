@@ -20,7 +20,7 @@ cd scripts
 ```
 Once this steps are done, a _shell_ file can be executed 
 ```bash
-./improved-rna.alignment.sh 
+./improved_rna_seq.sh 
 ```
 
 After running the pipeline, several folders are found in _bin_: 
