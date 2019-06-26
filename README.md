@@ -12,9 +12,10 @@ On the _RNA-Seq_ folder, you will find the necessary tools to run a RNA-Seq pipe
 
 A folder _bin_ must be created where all the results will be stored. 
 The user must follow the following steps before running the analysis 
-ºººsh 
+```sh 
 git clone https://github.com/jumagari14/Tabacum_Galaxy.git
 cd Tabacum_Galaxy/RNA-Seq
 mkdir -p -m 755 bin
 cd scripts 
 ./improved-rna.alignment.sh 
+```
