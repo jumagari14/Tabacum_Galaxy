@@ -14,8 +14,12 @@ A folder _bin_ must be created where all the results will be stored.
 The user must follow the following steps before running the analysis 
 ```bash 
 git clone https://github.com/jumagari14/Tabacum_Galaxy.git
-cd Tabacum_Galaxy/RNA-Seq
-mkdir -p -m 755 bin
+cd Tabacum_Galaxy
+tar xvzf RNA-Seq.tar.gz 
+cd RNA-Seq
+mkdir -p -m 755 bin data
+mkdir -p -m 755 data/subdata
+## Include all the necessary data in data and subdata folder
 cd scripts 
 ```
 Once this steps are done, a _shell_ file can be executed 
