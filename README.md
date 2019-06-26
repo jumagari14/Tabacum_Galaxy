@@ -22,7 +22,7 @@ mkdir -p -m 755 data/subdata
 ## Include all the necessary data in data and subdata folder
 cd scripts 
 ```
-Once this steps are done, a _shell_ file can be executed 
+Once these steps are done, a _shell_ file can be executed 
 ```bash
 ./improved_rna_seq.sh 
 ```
