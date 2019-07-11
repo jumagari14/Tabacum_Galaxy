@@ -44,6 +44,7 @@ export LD_LIBRARY_PATH=/gpfs/softs/contrib/apps/gcc/7.3.0/lib64/:/gpfs/softs/con
 cd ~/ 
 list=$(ls ./data/subdata/*.fq.gz | xargs -n 1 basename | sed 's/\(.*\)_.*/\1/' | sort -u)
 
+mkdir -p -m 755 ./bin
 mkdir -p -m 755 ./bin/trimm_data 
 mkdir -p -m 755 ./bin/trimm_data/quality
 
@@ -88,22 +89,29 @@ parallel -j 3 "java -jar ./scripts/Trimmomatic-0.39/trimmomatic-0.39.jar PE -thr
 
 parallel -j 3 "rm -rf {}_1.unp.fq.gz {}_2.unp.fq.gz" ::: $list
 
-./scripts/STAR --genomeLoad LoadAndExit --genomeDir ./bin/genome_ind # Load genome just once to save RAM memory 
+./scripts/STAR --genomeLoad LoadAndExit --genomeDir ./bin/genome_ind
+# Load genome just once to save RAM memory 
 
 parallel --compress -j 3 "./scripts/STAR --runThreadN 16 --runMode alignReads --genomeLoad LoadAndKeep --readFilesCommand zcat --outFilterMatchNmin 16 --outSAMtype BAM Unsorted SortedByCoordinate --limitBAMsortRAM 10000200000 --genomeDir ./bin/genome_ind  --outFileNamePrefix ./bin/STAR_Align/{} --readFilesIn ./bin/trimm_data/{}_1.par.fq.gz  ./bin/trimm_data/{}_2.par.fq.gz" ::: $list
 # --genomeLoad LoadAndKeep: keep genome in memory  
 # --outFilterMatchNmin: alignment is set if matched bases is higher 
 # --readFilesCommand zcat: work with compressed gz files
-./scripts/STAR --genomeLoad Remove --genomeDir ./bin/genome_ind # Unload genome
-#parallel --compress -j 3 "./STAR --runThreadN 16 --runMode alignReads --outFilterMatchNmin 16 --outSAMtype BAM Unsorted SortedByCoordinate --genomeDir /scratch/juagarcia/genome_ind  --outFileNamePrefix STAR_Align/{} --readFilesIn trimm_data/{}_1.par.fq.gz  trimm_data/{}_2.par.fq.gz" ::: $list
+# --runThreadN: number of threads
+# --runMode alignReads: alignment operation is run
+# --outSAMtype BAM Unsorted SortedByCoordinate: both sorted and unsorted bam files are calculated
+./scripts/STAR --genomeLoad Remove --genomeDir ./bin/genome_ind 
+# Unload genome
 
 # In featureCounts, paired-end reads must have -p option!!! 
 cd ./bin/STAR_Align
 parallel -j 3 "~/scripts/featureCounts -p -t exon -g gene_id -F GTF -Q 32 -T 16 -a "$gtf" -o ../counts/{.}.txt {}" ::: *Aligned.out.bam 
+# p: mandatory option with paired-end reads
 # -F GTF: reference format, GFF or GTF
 # -t exon: exon region are kept from gtf file
 # -Q 32: quality threshold
 # -T 16: number of threads
+# -a "$gtf": annotation file
+# -o ../counts/{.}.txt: output prefix 
 
 
 cd ../counts ; touch Matrix_data.tabular 
@@ -133,5 +141,15 @@ mv counts/Matrix_data.tabular ./
 
 
 # ## Normalisation (to be run on the computer in a local folder)
-# Rscript edgeR.r -m Matrix_data.tabular -a Galaxy_An/gffread_on_data_6__gtf.gtf -i Stress_level::NonStr,NonStr,NonStr,Str,Str,Str -o ./Galaxy_An -C Str,NonStr -z 1 -y -l 1
-# Rscript deseq2.r -m Matrix_data.tabular -i NonStr,NonStr,NonStr,Str,Str,Str 
+# Rscript edgeR.r -m Matrix_data.tabular -a Galaxy_An/gffread_on_data_6__gtf.gtf -i Stress_level::Str,NonStr,Str,NonStr,Str,NonStr -o ./Galaxy_An -C Str,NonStr -z 1 -y -l 1
+# -m: Path to count matrix
+# -a: Path to input containing gene annotations
+# -i: Factors with levels separated by comma 
+# -o: Path to folder to write all output to
+# -z: Integer specifying minimum total count requirement
+# -y: Boolean to specify if total requirement is considered 
+# -l: Float specifying the log-fold-change requirement   
+# Rscript deseq2.r -m Matrix_data.tabular -i Str,NonStr,Str,NonStr,Str,NonStr -r 5
+# -m: Path to count matrix
+# -i: Levels separated by comma
+# -r: Minimum count requirement per each feature
